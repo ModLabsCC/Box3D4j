@@ -17,6 +17,7 @@ def hostPlatform = providers.systemProperty('os.name').zip(providers.systemPrope
     "${osName}-${architecture}"
 }.get()
 def targetPlatform = providers.gradleProperty('javacppPlatform').getOrElse(hostPlatform)
+def bashExecutable = providers.environmentVariable('BASH_EXECUTABLE').getOrElse('bash')
 
 configurations {
     javacppTool
@@ -40,7 +41,7 @@ sourceSets.main.resources.srcDir nativeResources
 
 tasks.register('buildBox3D', Exec) {
     environment 'PLATFORM', targetPlatform
-    commandLine 'bash', 'scripts/build-box3d.sh'
+    commandLine bashExecutable, 'scripts/build-box3d.sh'
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/include")
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/lib")
 }

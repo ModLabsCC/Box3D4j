@@ -13,7 +13,11 @@ if [[ ! -f "${ARCHIVE}" ]]; then
         "https://github.com/erincatto/box3d/archive/refs/tags/v${BOX3D_VERSION}.tar.gz" \
         --output "${ARCHIVE}"
 fi
-echo "${BOX3D_SHA256}  ${ARCHIVE}" | sha256sum --check
+if command -v sha256sum >/dev/null 2>&1; then
+    echo "${BOX3D_SHA256}  ${ARCHIVE}" | sha256sum -c
+else
+    echo "${BOX3D_SHA256}  ${ARCHIVE}" | shasum -a 256 -c
+fi
 
 if [[ ! -d "${SOURCE}" ]]; then
     tar -xzf "${ARCHIVE}" -C "${PREFIX}"
