@@ -40,7 +40,7 @@ sourceSets.main.java.srcDir generatedJava
 sourceSets.main.resources.srcDir nativeResources
 
 tasks.register('buildBox3D', Exec) {
-    environment 'PLATFORM', targetPlatform
+    environment 'BOX3D_TARGET_PLATFORM', targetPlatform
     commandLine bashExecutable, 'scripts/build-box3d.sh'
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/include")
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/lib")

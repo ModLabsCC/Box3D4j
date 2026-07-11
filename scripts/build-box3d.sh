@@ -3,7 +3,7 @@ set -euo pipefail
 
 BOX3D_VERSION=0.1.0
 BOX3D_SHA256=df232c7618c0d0d3927b798044559ee56eabadeb9d8ff9dc526d4b384d7b415d
-PREFIX="build/${PLATFORM}"
+PREFIX="build/${BOX3D_TARGET_PLATFORM}"
 ARCHIVE="${PREFIX}/box3d-${BOX3D_VERSION}.tar.gz"
 SOURCE="${PREFIX}/box3d-${BOX3D_VERSION}"
 
@@ -23,7 +23,7 @@ if [[ ! -d "${SOURCE}" ]]; then
     tar -xzf "${ARCHIVE}" -C "${PREFIX}"
 fi
 
-case "${PLATFORM}" in
+case "${BOX3D_TARGET_PLATFORM}" in
     linux-*)
         CONFIGURE_PRESET=linux-release
         BUILD_PRESET=linux-release
@@ -37,7 +37,7 @@ case "${PLATFORM}" in
         BUILD_PRESET=windows-release
         ;;
     *)
-        echo "Unsupported platform: ${PLATFORM}" >&2
+        echo "Unsupported platform: ${BOX3D_TARGET_PLATFORM}" >&2
         exit 1
         ;;
 esac
