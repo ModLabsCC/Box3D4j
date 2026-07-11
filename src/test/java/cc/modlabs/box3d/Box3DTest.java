@@ -8,6 +8,7 @@ import static cc.modlabs.box3d.global.Box3D.b3World_Step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 class Box3DTest {
@@ -19,6 +20,14 @@ class Box3DTest {
         assertEquals(0, version.getClass().getMethod("major").invoke(version));
         assertEquals(1, version.getClass().getMethod("minor").invoke(version));
         assertEquals(0, version.getClass().getMethod("revision").invoke(version));
+    }
+
+    @Test
+    void doesNotExposeInternalAssertionHandler() throws Exception {
+        Class<?> api = Class.forName("cc.modlabs.box3d.global.Box3D");
+
+        assertTrue(Arrays.stream(api.getDeclaredMethods())
+                .noneMatch(method -> method.getName().equals("b3InternalAssert")));
     }
 
     @Test
