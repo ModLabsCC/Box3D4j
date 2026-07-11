@@ -1,0 +1,180 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'cc.modlabs'
+version = System.getenv('VERSION_OVERRIDE')?.trim() ?: '0.1.0-1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+def hostPlatform = providers.systemProperty('os.name').zip(providers.systemProperty('os.arch')) { os, arch ->
+    def osName = os.toLowerCase().contains('win') ? 'windows' :
+            os.toLowerCase().contains('mac') ? 'macosx' : 'linux'
+    def architecture = (arch == 'aarch64' || arch == 'arm64') ? 'arm64' : 'x86_64'
+    "${osName}-${architecture}"
+}.get()
+def targetPlatform = providers.gradleProperty('javacppPlatform').getOrElse(hostPlatform)
+
+configurations {
+    javacppTool
+}
+
+dependencies {
+    api 'org.bytedeco:javacpp:1.5.13'
+    javacppTool 'org.bytedeco:javacpp:1.5.13'
+    testImplementation platform('org.junit:junit-bom:6.0.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    runtimeOnly "org.bytedeco:javacpp:1.5.13:${targetPlatform}"
+}
+
+def generatedJava = layout.buildDirectory.dir('generated/sources/javacpp')
+def presetClasses = layout.buildDirectory.dir('preset-classes')
+def nativeResources = layout.buildDirectory.dir('generated/resources/native')
+
+sourceSets.main.java.srcDir generatedJava
+sourceSets.main.resources.srcDir nativeResources
+
+tasks.register('buildBox3D', Exec) {
+    environment 'PLATFORM', targetPlatform
+    commandLine 'bash', 'scripts/build-box3d.sh'
+    outputs.dir layout.buildDirectory.dir("${targetPlatform}/include")
+    outputs.dir layout.buildDirectory.dir("${targetPlatform}/lib")
+}
+
+tasks.register('compilePresetJava', JavaCompile) {
+    source = fileTree('src/main/java') { include 'cc/modlabs/box3d/presets/**' }
+    classpath = configurations.compileClasspath
+    destinationDirectory = presetClasses
+    options.release = 17
+}
+
+tasks.register('generateBindings', JavaExec) {
+    dependsOn 'buildBox3D', 'compilePresetJava'
+    classpath = configurations.javacppTool
+    mainClass = 'org.bytedeco.javacpp.tools.Builder'
+    doFirst {
+        delete generatedJava
+        args '-classpath', presetClasses.get().asFile.absolutePath,
+                '-d', generatedJava.get().asFile.absolutePath,
+                "-Dplatform=${targetPlatform}",
+                "-Dplatform.includepath=${layout.buildDirectory.dir("${targetPlatform}/include").get().asFile.absolutePath}",
+                '-nogenerate', 'cc.modlabs.box3d.presets.box3d'
+    }
+    doLast {
+        def global = generatedJava.get().file('cc/modlabs/box3d/global/Box3D.java').asFile
+        global.text = global.text.replace('public static final int b3CreateWorld = b3CreateWorldDoublePrecision;\n', '')
+    }
+    outputs.dir generatedJava
+    outputs.upToDateWhen { false }
+}
+
+compileJava.dependsOn 'generateBindings'
+
+tasks.register('compileNativeBindings', JavaExec) {
+    dependsOn compileJava
+    classpath = configurations.javacppTool
+    mainClass = 'org.bytedeco.javacpp.tools.Builder'
+    doFirst {
+        args '-classpath', sourceSets.main.output.classesDirs.asPath + File.pathSeparator + configurations.compileClasspath.asPath,
+                '-d', nativeResources.get().asFile.absolutePath,
+                "-Dplatform=${targetPlatform}",
+                "-Dplatform.includepath=${layout.buildDirectory.dir("${targetPlatform}/include").get().asFile.absolutePath}",
+                "-Dplatform.linkpath=${layout.buildDirectory.dir("${targetPlatform}/lib").get().asFile.absolutePath}",
+                'cc.modlabs.box3d.**'
+    }
+    doLast {
+        copy {
+            from nativeResources.get().asFile
+            include 'libjniBox3D.so', 'jniBox3D.dll', 'libjniBox3D.dylib'
+            into nativeResources.get().dir("cc/modlabs/box3d/${targetPlatform}")
+        }
+    }
+    outputs.dir nativeResources
+    outputs.upToDateWhen { false }
+}
+
+processResources.dependsOn 'compileNativeBindings'
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { dependency ->
+            dependency.isDirectory() ? dependency : zipTree(dependency)
+        }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    manifest {
+        attributes(
+                'Automatic-Module-Name': 'cc.modlabs.box3d',
+                'Implementation-Title': 'Box3D4j',
+                'Implementation-Version': project.version,
+                'Box3D-Version': '0.1.0'
+        )
+    }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = project.group.toString()
+            artifactId = 'box3d4j'
+            version = project.version.toString()
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = 'ModLabs'
+            def repositoryProperty = version.toString().toUpperCase().endsWith('-SNAPSHOT') ?
+                    'modlabsMavenSnapshotPublishUrl' : 'modlabsMavenPublishUrl'
+            url = uri(providers.gradleProperty(repositoryProperty).get())
+            credentials {
+                username = System.getenv('NEXUS_USER') ?: 'modlabs'
+                password = System.getenv('REPO_TOKEN')
+            }
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+javadoc {
+    failOnError = false
+    options.addBooleanOption('Xdoclint:none', true)
+}
+
+sourcesJar {
+    dependsOn 'generateBindings', 'compileNativeBindings'
+    exclude '**/*.so', '**/*.dylib', '**/*.dll'
+}
+
+tasks.register('verifyStandaloneJar') {
+    dependsOn jar
+    doLast {
+        def archive = tasks.jar.archiveFile.get().asFile
+        def zip = new java.util.zip.ZipFile(archive)
+        try {
+            assert zip.getEntry('org/bytedeco/javacpp/Loader.class') != null : 'JavaCPP runtime is not bundled'
+            assert zip.getEntry("cc/modlabs/box3d/${targetPlatform}/libjniBox3D.so") != null ||
+                    zip.getEntry("cc/modlabs/box3d/${targetPlatform}/libjniBox3D.dylib") != null ||
+                    zip.getEntry("cc/modlabs/box3d/${targetPlatform}/jniBox3D.dll") != null :
+                    "Box3D native for ${targetPlatform} is not bundled"
+        } finally {
+            zip.close()
+        }
+    }
+}
+
+check.dependsOn 'verifyStandaloneJar'

@@ -1,0 +1,1 @@
+rootProject.name = "Box3D4j"
