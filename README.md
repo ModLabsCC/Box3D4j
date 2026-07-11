@@ -45,9 +45,10 @@ platform explicitly. Native code must be built on the matching operating system.
 ## Cross-platform bundle
 
 The GitHub Actions workflow builds and tests on Linux x86-64, macOS Apple Silicon, macOS Intel,
-and Windows x86-64, then merges the results into `box3d4j-0.1.0-1.0.0-all.jar`. That single artifact carries
-all four Box3D JNI libraries, the corresponding JavaCPP native runtimes, and the JavaCPP Java
-classes. It is the only JAR consumers need on the classpath.
+and Windows x86-64, then merges the results into `box3d4j-all.jar` and publishes it as
+`cc.modlabs:box3d4j:<version>`. That single artifact carries all four Box3D JNI libraries, the
+corresponding JavaCPP native runtimes, and the JavaCPP Java classes. It is the only JAR consumers
+need on the classpath.
 
 A JAR built locally contains the native binaries for the local target. The canonical `-all.jar`
 is assembled by CI because macOS and Windows binaries must be compiled on their respective

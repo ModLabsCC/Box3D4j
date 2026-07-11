@@ -129,7 +129,14 @@ publishing {
             groupId = project.group.toString()
             artifactId = 'box3d4j'
             version = project.version.toString()
-            from components.java
+            def publicationJar = providers.gradleProperty('publicationJar').orNull
+            if (publicationJar) {
+                artifact(file(publicationJar))
+                artifact tasks.named('sourcesJar')
+                artifact tasks.named('javadocJar')
+            } else {
+                from components.java
+            }
         }
     }
     repositories {
