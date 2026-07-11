@@ -13,24 +13,46 @@ if [[ ! -f "${ARCHIVE}" ]]; then
         "https://github.com/erincatto/box3d/archive/refs/tags/v${BOX3D_VERSION}.tar.gz" \
         --output "${ARCHIVE}"
 fi
-if command -v sha256sum >/dev/null 2>&1; then
-    echo "${BOX3D_SHA256}  ${ARCHIVE}" | sha256sum -c
-else
+if [[ "${OSTYPE}" == darwin* ]]; then
     echo "${BOX3D_SHA256}  ${ARCHIVE}" | shasum -a 256 -c
+else
+    echo "${BOX3D_SHA256}  ${ARCHIVE}" | sha256sum -c
 fi
 
 if [[ ! -d "${SOURCE}" ]]; then
     tar -xzf "${ARCHIVE}" -C "${PREFIX}"
 fi
 
-cmake -S "${SOURCE}" -B "${PREFIX}/cmake" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="$(pwd)/${PREFIX}" \
-    -DBUILD_SHARED_LIBS=OFF \
-    -DBOX3D_SAMPLES=OFF \
-    -DBOX3D_BENCHMARKS=OFF \
-    -DBOX3D_DOCS=OFF \
-    -DBOX3D_UNIT_TESTS=OFF \
-    -DBOX3D_VALIDATE=OFF
-cmake --build "${PREFIX}/cmake" --config Release --parallel
-cmake --install "${PREFIX}/cmake" --config Release
+case "${PLATFORM}" in
+    linux-*)
+        CONFIGURE_PRESET=linux-release
+        BUILD_PRESET=linux-release
+        ;;
+    macosx-*)
+        CONFIGURE_PRESET=macos
+        BUILD_PRESET=macos-release
+        ;;
+    windows-*)
+        CONFIGURE_PRESET=windows
+        BUILD_PRESET=windows-release
+        ;;
+    *)
+        echo "Unsupported platform: ${PLATFORM}" >&2
+        exit 1
+        ;;
+esac
+
+INSTALL_PREFIX="$(pwd)/${PREFIX}"
+(
+    cd "${SOURCE}"
+    cmake --preset "${CONFIGURE_PRESET}" \
+        -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DBOX3D_SAMPLES=OFF \
+        -DBOX3D_BENCHMARKS=OFF \
+        -DBOX3D_DOCS=OFF \
+        -DBOX3D_UNIT_TESTS=OFF \
+        -DBOX3D_VALIDATE=OFF
+    cmake --build --preset "${BUILD_PRESET}" --parallel
+    cmake --install build --config Release
+)
