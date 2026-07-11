@@ -25,6 +25,7 @@ try {
 ```
 
 JavaCPP loads the bundled native library automatically when the API class is first used.
+Published artifacts target Java 8 and can be used by Forge 1.16.5 projects.
 
 ## Build
 

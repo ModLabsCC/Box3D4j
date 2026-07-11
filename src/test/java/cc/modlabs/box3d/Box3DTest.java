@@ -6,8 +6,11 @@ import static cc.modlabs.box3d.global.Box3D.b3DestroyWorld;
 import static cc.modlabs.box3d.global.Box3D.b3World_IsValid;
 import static cc.modlabs.box3d.global.Box3D.b3World_Step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.DataInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +31,18 @@ class Box3DTest {
 
         assertTrue(Arrays.stream(api.getDeclaredMethods())
                 .noneMatch(method -> method.getName().equals("b3InternalAssert")));
+    }
+
+    @Test
+    void producesJava8Bytecode() throws Exception {
+        try (InputStream resource = getClass().getClassLoader()
+                .getResourceAsStream("cc/modlabs/box3d/global/Box3D.class")) {
+            assertNotNull(resource);
+            DataInputStream classFile = new DataInputStream(resource);
+            assertEquals(0xCAFEBABE, classFile.readInt());
+            classFile.readUnsignedShort();
+            assertEquals(52, classFile.readUnsignedShort());
+        }
     }
 
     @Test

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'cc.modlabs'
-version = System.getenv('VERSION_OVERRIDE')?.trim() ?: '0.1.0-1.0-SNAPSHOT'
+version = System.getenv('VERSION_OVERRIDE')?.trim() ?: '0.1.0-1.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -50,7 +50,7 @@ tasks.register('compilePresetJava', JavaCompile) {
     source = fileTree('src/main/java') { include 'cc/modlabs/box3d/presets/**' }
     classpath = configurations.compileClasspath
     destinationDirectory = presetClasses
-    options.release = 17
+    options.release = 8
 }
 
 tasks.register('generateBindings', JavaExec) {
@@ -120,8 +120,18 @@ jar {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     withJavadocJar()
     withSourcesJar()
+}
+
+compileJava {
+    options.release = 8
+}
+
+compileTestJava {
+    options.release = 17
 }
 
 publishing {
