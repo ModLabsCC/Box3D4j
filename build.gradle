@@ -135,7 +135,7 @@ publishing {
     repositories {
         maven {
             name = 'ModLabs'
-            def repositoryProperty = version.toString().toUpperCase().endsWith('-SNAPSHOT') ?
+            def repositoryProperty = version.toString().toUpperCase().contains('-SNAPSHOT') ?
                     'modlabsMavenSnapshotPublishUrl' : 'modlabsMavenPublishUrl'
             url = uri(providers.gradleProperty(repositoryProperty).get())
             credentials {
