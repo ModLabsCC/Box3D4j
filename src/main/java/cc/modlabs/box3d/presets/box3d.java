@@ -17,7 +17,8 @@ import org.bytedeco.javacpp.tools.InfoMapper;
                     "<box3d/id.h>",
                     "<box3d/collision.h>",
                     "<box3d/types.h>",
-                    "<box3d/box3d.h>"
+                    "<box3d/box3d.h>",
+                    "<box3d4j.h>"
             }, link = "box3d")
         })
 public class box3d implements InfoMapper {
