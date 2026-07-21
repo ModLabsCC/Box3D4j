@@ -42,6 +42,7 @@ sourceSets.main.resources.srcDir nativeResources
 tasks.register('buildBox3D', Exec) {
     environment 'BOX3D_TARGET_PLATFORM', targetPlatform
     commandLine bashExecutable, 'scripts/build-box3d.sh'
+    inputs.file 'src/main/c/box3d4j.h'
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/include")
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/lib")
 }

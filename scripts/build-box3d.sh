@@ -56,3 +56,5 @@ INSTALL_PREFIX="$(pwd)/${PREFIX}"
     cmake --build --preset "${BUILD_PRESET}" --parallel
     cmake --install build --config Release
 )
+
+cp src/main/c/box3d4j.h "${PREFIX}/include/box3d4j.h"
