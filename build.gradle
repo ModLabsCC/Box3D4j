@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'cc.modlabs'
-version = System.getenv('VERSION_OVERRIDE')?.trim() ?: '0.1.0-1.0.1-SNAPSHOT'
+version = System.getenv('VERSION_OVERRIDE')?.trim() ?: "git-${providers.gradleProperty('box3d4jVersion').get()}"
 
 repositories {
     mavenCentral()
@@ -114,7 +114,7 @@ jar {
                 'Automatic-Module-Name': 'cc.modlabs.box3d',
                 'Implementation-Title': 'Box3D4j',
                 'Implementation-Version': project.version,
-                'Box3D-Version': '0.1.0'
+                'Box3D-Version': 'git'
         )
     }
 }

@@ -2,11 +2,17 @@ name: Build and Publish
 
 on:
   push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 0.1.0-1.0.0). Leave empty to publish SNAPSHOT."
+        description: "Version override (e.g. 0.1.0-1.0.2). Leave empty for git-1.0.2."
         required: false
 
 permissions:
@@ -17,7 +23,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  upstream:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.box3d.outputs.sha }}
+      changed: ${{ steps.box3d.outputs.changed }}
+    steps:
+      - id: box3d
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="$(git ls-remote https://github.com/erincatto/box3d.git refs/heads/main | cut -f1)"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/box3d-main-${sha}" >/dev/null 2>&1; then
+            changed=false
+          else
+            changed=true
+          fi
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+
   native:
+    needs: upstream
+    if: github.event_name != 'schedule' || needs.upstream.outputs.changed == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +64,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       VERSION_OVERRIDE: ${{ github.event.inputs.version || '' }}
+      BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
       BASH_EXECUTABLE: ${{ matrix.bash }}
     steps:
       - uses: actions/checkout@v4
@@ -61,12 +89,15 @@ jobs:
           if-no-files-found: error
 
   bundle:
-    needs: native
+    needs: [upstream, native]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
       NEXUS_USER: ${{ secrets.NEXUS_USER }}
       REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
       VERSION_OVERRIDE: ${{ github.event.inputs.version || '' }}
+      BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -102,14 +133,23 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: echo "VERSION_OVERRIDE=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Validate publishing secrets
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && needs.upstream.outputs.changed == 'true') || github.event_name == 'schedule'
         run: |
           if [ -z "${REPO_TOKEN}" ]; then
             echo "REPO_TOKEN secret is required for publishing."
             exit 1
           fi
       - name: Publish universal JAR
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && needs.upstream.outputs.changed == 'true') || github.event_name == 'schedule'
         run: >-
           ./gradlew --no-daemon publish
           -PpublicationJar="$PWD/box3d4j-all.jar"
+      - name: Mark Box3D commit as published
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'schedule') && needs.upstream.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOX3D_SHA: ${{ needs.upstream.outputs.sha }}
+        run: >-
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs"
+          -f ref="refs/tags/box3d-main-${BOX3D_SHA}"
+          -f sha="${GITHUB_SHA}"

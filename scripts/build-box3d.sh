@@ -1,26 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BOX3D_VERSION=0.1.0
-BOX3D_SHA256=df232c7618c0d0d3927b798044559ee56eabadeb9d8ff9dc526d4b384d7b415d
 PREFIX="build/${BOX3D_TARGET_PLATFORM}"
-ARCHIVE="${PREFIX}/box3d-${BOX3D_VERSION}.tar.gz"
-SOURCE="${PREFIX}/box3d-${BOX3D_VERSION}"
+SOURCE="${PREFIX}/box3d-git"
+BOX3D_COMMIT="${BOX3D_COMMIT:-main}"
 
 mkdir -p "${PREFIX}"
-if [[ ! -f "${ARCHIVE}" ]]; then
-    curl --fail --location --silent --show-error \
-        "https://github.com/erincatto/box3d/archive/refs/tags/v${BOX3D_VERSION}.tar.gz" \
-        --output "${ARCHIVE}"
-fi
-if [[ "${OSTYPE}" == darwin* ]]; then
-    echo "${BOX3D_SHA256}  ${ARCHIVE}" | shasum -a 256 -c
-else
-    echo "${BOX3D_SHA256}  ${ARCHIVE}" | sha256sum -c
-fi
-
 if [[ ! -d "${SOURCE}" ]]; then
-    tar -xzf "${ARCHIVE}" -C "${PREFIX}"
+    git init --quiet "${SOURCE}"
+    git -C "${SOURCE}" remote add origin https://github.com/erincatto/box3d.git
+    git -C "${SOURCE}" fetch --quiet --depth 1 origin "${BOX3D_COMMIT}"
+    git -C "${SOURCE}" checkout --quiet --detach FETCH_HEAD
 fi
 
 case "${BOX3D_TARGET_PLATFORM}" in

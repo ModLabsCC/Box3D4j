@@ -1,7 +1,7 @@
 # Box3D4j
 
-Generated Java bindings for [Erin Catto's Box3D](https://github.com/erincatto/box3d), pinned to
-the initial `v0.1.0` release. The binding covers the complete public C17 API: worlds, bodies,
+Generated Java bindings for the latest `main` of
+[Erin Catto's Box3D](https://github.com/erincatto/box3d). The binding covers the complete public C17 API: worlds, bodies,
 shapes, joints, collision queries, events, character movement, recording, and replay.
 
 ## API
@@ -29,13 +29,13 @@ Published artifacts target Java 8 and can be used by Forge 1.16.5 projects.
 
 ## Build
 
-Requirements are JDK 17, CMake 3.22+, a C/C++ compiler, `curl`, and `tar`.
+Requirements are JDK 17, CMake 3.22+, a C/C++ compiler, and Git.
 
 ```shell
 ./gradlew clean test jar
 ```
 
-The build downloads the pinned Box3D source archive, verifies its SHA-256 checksum, builds it
+The build clones the latest Box3D `main` and builds it
 statically, generates Java and JNI bindings from all public headers, and embeds the JNI library
 in the JAR. No system Box3D installation is used.
 
@@ -50,6 +50,10 @@ and Windows x86-64, then merges the results into `box3d4j-all.jar` and publishes
 `cc.modlabs:box3d4j:<version>`. That single artifact carries all four Box3D JNI libraries, the
 corresponding JavaCPP native runtimes, and the JavaCPP Java classes. It is the only JAR consumers
 need on the classpath.
+
+Untagged releases use `git-1.0.2`. CI checks Box3D `main` daily and publishes that version only
+once per upstream commit. Tags keep supplying their version as before, for example
+`v0.1.0-1.0.2` publishes `0.1.0-1.0.2`.
 
 A JAR built locally contains the native binaries for the local target. The canonical `-all.jar`
 is assembled by CI because macOS and Windows binaries must be compiled on their respective
