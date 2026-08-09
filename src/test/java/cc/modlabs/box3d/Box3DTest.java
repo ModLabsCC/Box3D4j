@@ -40,6 +40,14 @@ class Box3DTest {
     }
 
     @Test
+    void doesNotExposeUndefinedUpstreamFunction() throws Exception {
+        Class<?> api = Class.forName("cc.modlabs.box3d.global.Box3D");
+
+        assertTrue(Arrays.stream(api.getDeclaredMethods())
+                .noneMatch(method -> method.getName().equals("b3World_DumpShapeBounds")));
+    }
+
+    @Test
     void exposesAllocationFreeBodyMoveEvents() throws Exception {
         Class<?> api = Class.forName("cc.modlabs.box3d.global.Box3D");
 

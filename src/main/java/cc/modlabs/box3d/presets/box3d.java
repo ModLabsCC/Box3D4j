@@ -26,7 +26,7 @@ public class box3d implements InfoMapper {
     public void map(InfoMap infoMap) {
         infoMap.put(new Info("B3_API").cppText("#define B3_API"));
         infoMap.put(new Info("B3_INLINE").cppText("#define B3_INLINE"));
-        infoMap.put(new Info("b3InternalAssert").skip());
+        infoMap.put(new Info("b3InternalAssert", "b3World_DumpShapeBounds").skip());
         infoMap.put(new Info("BOX3D_EXPORT", "B3_BREAKPOINT", "B3_FORCE_INLINE", "B3_ID_INLINE",
                 "B3_DEFAULT_CATEGORY_BITS", "B3_DEFAULT_MASK_BITS").skip());
     }
