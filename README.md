@@ -51,9 +51,9 @@ and Windows x86-64, then merges the results into `box3d4j-all.jar` and publishes
 corresponding JavaCPP native runtimes, and the JavaCPP Java classes. It is the only JAR consumers
 need on the classpath.
 
-Untagged releases use `git-1.0.2`. CI checks Box3D `main` daily and publishes that version only
-once per upstream commit. Tags keep supplying their version as before, for example
-`v0.1.0-1.0.2` publishes `0.1.0-1.0.2`.
+Untagged releases use `git-<Box3D short commit>-1.0.2`, for example `git-3fc20f5-1.0.2`.
+CI checks Box3D `main` daily and publishes once per upstream commit. Tags keep supplying their
+version as before, for example `v0.1.0-1.0.2` publishes `0.1.0-1.0.2`.
 
 A JAR built locally contains the native binaries for the local target. The canonical `-all.jar`
 is assembled by CI because macOS and Windows binaries must be compiled on their respective

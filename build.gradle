@@ -4,7 +4,8 @@ plugins {
 }
 
 group = 'cc.modlabs'
-version = System.getenv('VERSION_OVERRIDE')?.trim() ?: "git-${providers.gradleProperty('box3d4jVersion').get()}"
+def box3dRevision = System.getenv('BOX3D_COMMIT')?.trim()?.take(7) ?: 'main'
+version = System.getenv('VERSION_OVERRIDE')?.trim() ?: "git-${box3dRevision}-${providers.gradleProperty('box3d4jVersion').get()}"
 
 repositories {
     mavenCentral()

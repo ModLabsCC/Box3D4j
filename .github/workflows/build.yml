@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version override (e.g. 0.1.0-1.0.2). Leave empty for git-1.0.2."
+        description: "Version override (e.g. 0.1.0-1.0.2). Leave empty for the commit-based git version."
         required: false
 
 permissions:
