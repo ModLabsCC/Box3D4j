@@ -28,19 +28,24 @@ jobs:
     outputs:
       sha: ${{ steps.box3d.outputs.sha }}
       changed: ${{ steps.box3d.outputs.changed }}
+      marker: ${{ steps.box3d.outputs.marker }}
     steps:
+      - uses: actions/checkout@v4
       - id: box3d
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           sha="$(git ls-remote https://github.com/erincatto/box3d.git refs/heads/main | cut -f1)"
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/box3d-main-${sha}" >/dev/null 2>&1; then
+          project_version="$(sed -n 's/^box3d4jVersion=//p' gradle.properties)"
+          marker="box3d-main-${project_version}-${sha}"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${marker}" >/dev/null 2>&1; then
             changed=false
           else
             changed=true
           fi
           echo "sha=${sha}" >> "$GITHUB_OUTPUT"
           echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+          echo "marker=${marker}" >> "$GITHUB_OUTPUT"
 
   native:
     needs: upstream
@@ -148,8 +153,8 @@ jobs:
         if: (github.ref == 'refs/heads/main' || github.event_name == 'schedule') && needs.upstream.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          BOX3D_SHA: ${{ needs.upstream.outputs.sha }}
+          BOX3D_MARKER: ${{ needs.upstream.outputs.marker }}
         run: >-
           gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs"
-          -f ref="refs/tags/box3d-main-${BOX3D_SHA}"
+          -f ref="refs/tags/${BOX3D_MARKER}"
           -f sha="${GITHUB_SHA}"
