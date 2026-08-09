@@ -68,7 +68,9 @@ tasks.register('generateBindings', JavaExec) {
     }
     doLast {
         def global = generatedJava.get().file('cc/modlabs/box3d/global/Box3D.java').asFile
-        global.text = global.text.replace('public static final int b3CreateWorld = b3CreateWorldDoublePrecision;\n', '')
+        def alias = 'public static final int b3CreateWorld = b3CreateWorldDoublePrecision;'
+        global.text = global.text.replace(alias + '\r\n', '').replace(alias + '\n', '')
+        assert !global.text.contains(alias) : 'Failed to remove invalid b3CreateWorld alias'
     }
     outputs.dir generatedJava
     outputs.upToDateWhen { false }
