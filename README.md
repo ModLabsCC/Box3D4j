@@ -107,5 +107,12 @@ A JAR built locally contains the native binaries for the local target. The canon
 is assembled by CI because macOS and Windows binaries must be compiled on their respective
 operating systems.
 
-Box3D is MIT licensed. The generated binding retains the upstream SPDX notices in its generated
-source and binary metadata.
+## License
+
+Box3D4j is licensed under the [MIT License](LICENSE).
+
+The bundled [Box3D](https://github.com/erincatto/box3d) code is MIT licensed. The generated binding
+retains its upstream SPDX notices and [license](src/main/resources/META-INF/LICENSE-box3d.txt).
+The bundled [JavaCPP](https://github.com/bytedeco/javacpp) runtime is redistributed under the
+Apache License 2.0; see its [license](src/main/resources/META-INF/LICENSE-javacpp.txt) and
+[notice](src/main/resources/META-INF/NOTICE-javacpp.txt).

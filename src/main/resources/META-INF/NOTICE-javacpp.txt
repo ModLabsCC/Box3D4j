@@ -1,0 +1,7 @@
+Box3D4j includes JavaCPP 1.5.13.
+
+Copyright (C) 2011-2022 Samuel Audet
+Source: https://github.com/bytedeco/javacpp
+
+JavaCPP is dual-licensed. Box3D4j redistributes it under the Apache License,
+Version 2.0. See LICENSE-javacpp.txt for the applicable license terms.

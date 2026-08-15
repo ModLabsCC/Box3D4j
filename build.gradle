@@ -102,7 +102,13 @@ tasks.register('compileNativeBindings', JavaExec) {
     outputs.upToDateWhen { false }
 }
 
-processResources.dependsOn 'compileNativeBindings'
+processResources {
+    dependsOn 'compileNativeBindings'
+    from('LICENSE') {
+        into 'META-INF'
+        rename { 'LICENSE-box3d4j.txt' }
+    }
+}
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -144,6 +150,23 @@ publishing {
             groupId = project.group.toString()
             artifactId = 'box3d4j'
             version = project.version.toString()
+            pom {
+                name = 'Box3D4j'
+                description = 'Generated Java bindings for Box3D'
+                url = 'https://github.com/ModLabsCC/Box3D4j'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/license/mit'
+                        distribution = 'repo'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/ModLabsCC/Box3D4j.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ModLabsCC/Box3D4j.git'
+                    url = 'https://github.com/ModLabsCC/Box3D4j'
+                }
+            }
             def publicationJar = providers.gradleProperty('publicationJar').orNull
             if (publicationJar) {
                 artifact(file(publicationJar))
@@ -180,6 +203,10 @@ javadoc {
 sourcesJar {
     dependsOn 'generateBindings', 'compileNativeBindings'
     exclude '**/*.so', '**/*.dylib', '**/*.dll'
+    from('LICENSE') {
+        into 'META-INF'
+        rename { 'LICENSE-box3d4j.txt' }
+    }
 }
 
 tasks.register('verifyStandaloneJar') {
@@ -189,6 +216,9 @@ tasks.register('verifyStandaloneJar') {
         def zip = new java.util.zip.ZipFile(archive)
         try {
             assert zip.getEntry('org/bytedeco/javacpp/Loader.class') != null : 'JavaCPP runtime is not bundled'
+            assert zip.getEntry('META-INF/LICENSE-box3d4j.txt') != null : 'Box3D4j license is not bundled'
+            assert zip.getEntry('META-INF/LICENSE-javacpp.txt') != null : 'JavaCPP license is not bundled'
+            assert zip.getEntry('META-INF/NOTICE-javacpp.txt') != null : 'JavaCPP notice is not bundled'
             assert zip.getEntry("cc/modlabs/box3d/${targetPlatform}/libjniBox3D.so") != null ||
                     zip.getEntry("cc/modlabs/box3d/${targetPlatform}/libjniBox3D.dylib") != null ||
                     zip.getEntry("cc/modlabs/box3d/${targetPlatform}/jniBox3D.dll") != null :
