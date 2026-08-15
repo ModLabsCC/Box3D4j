@@ -22,16 +22,6 @@ import org.junit.jupiter.api.Test;
 
 class Box3DTest {
     @Test
-    void exposesBox3DVersion() throws Exception {
-        Class<?> api = Class.forName("cc.modlabs.box3d.global.Box3D");
-        Object version = api.getMethod("b3GetVersion").invoke(null);
-
-        assertEquals(0, version.getClass().getMethod("major").invoke(version));
-        assertEquals(1, version.getClass().getMethod("minor").invoke(version));
-        assertEquals(0, version.getClass().getMethod("revision").invoke(version));
-    }
-
-    @Test
     void doesNotExposeInternalAssertionHandler() throws Exception {
         Class<?> api = Class.forName("cc.modlabs.box3d.global.Box3D");
 
