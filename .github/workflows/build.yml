@@ -30,7 +30,7 @@ jobs:
       changed: ${{ steps.box3d.outputs.changed }}
       marker: ${{ steps.box3d.outputs.marker }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: box3d
         env:
           GH_TOKEN: ${{ github.token }}
@@ -72,14 +72,16 @@ jobs:
       BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
       BASH_EXECUTABLE: ${{ matrix.bash }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
       - if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-      - uses: gradle/actions/setup-gradle@v4
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
       - name: Resolve version from tag
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash
@@ -87,7 +89,7 @@ jobs:
       - name: Build and test native binding
         shell: bash
         run: ./gradlew clean test jar -PjavacppPlatform=${{ matrix.platform }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-java@v7
         with:
           name: box3d4j-${{ matrix.platform }}
           path: build/libs/Box3D4j-*.jar
@@ -104,12 +106,14 @@ jobs:
       VERSION_OVERRIDE: ${{ github.event.inputs.version || '' }}
       BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -130,7 +134,7 @@ jobs:
           grep -Fx 'cc/modlabs/box3d/macosx-arm64/libjniBox3D.dylib' entries.txt
           grep -Fx 'cc/modlabs/box3d/macosx-x86_64/libjniBox3D.dylib' entries.txt
           grep -Fx 'cc/modlabs/box3d/windows-x86_64/jniBox3D.dll' entries.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-java@v7
         with:
           name: box3d4j-all
           path: box3d4j-all.jar
