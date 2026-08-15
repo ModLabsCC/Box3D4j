@@ -27,6 +27,54 @@ try {
 JavaCPP loads the bundled native library automatically when the API class is first used.
 Published artifacts target Java 8 and can be used by Forge 1.16.5 projects.
 
+## Dependency
+
+Artifacts are available in the public [ModLabs repository](https://repo.modlabs.cc/explorer).
+No credentials are required for dependency resolution.
+
+### Gradle (Kotlin DSL)
+
+```kotlin
+repositories {
+    maven("https://repo-api.modlabs.cc/repo/maven/maven-public/")
+}
+
+dependencies {
+    implementation("cc.modlabs:box3d4j:git-3fc20f5-1.0.2")
+}
+```
+
+### Gradle (Groovy)
+
+```groovy
+repositories {
+    maven { url "https://repo-api.modlabs.cc/repo/maven/maven-public/" }
+}
+
+dependencies {
+    implementation "cc.modlabs:box3d4j:git-3fc20f5-1.0.2"
+}
+```
+
+### Maven
+
+```xml
+<repositories>
+    <repository>
+        <id>modlabs-maven-public</id>
+        <url>https://repo-api.modlabs.cc/repo/maven/maven-public/</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>cc.modlabs</groupId>
+        <artifactId>box3d4j</artifactId>
+        <version>git-3fc20f5-1.0.2</version>
+    </dependency>
+</dependencies>
+```
+
 ## Build
 
 Requirements are JDK 17, CMake 3.22+, a C/C++ compiler, and Git.
