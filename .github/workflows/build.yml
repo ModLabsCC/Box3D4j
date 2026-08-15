@@ -79,6 +79,8 @@ jobs:
           java-version: 17
       - if: runner.os == 'Windows'
         uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
