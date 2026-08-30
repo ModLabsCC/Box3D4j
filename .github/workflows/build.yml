@@ -164,3 +164,15 @@ jobs:
           gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs"
           -f ref="refs/tags/${BOX3D_MARKER}"
           -f sha="${GITHUB_SHA}"
+      - name: Update README dependency versions
+        if: (github.ref == 'refs/heads/main' || github.event_name == 'schedule') && needs.upstream.outputs.changed == 'true'
+        run: |
+          version="$(./gradlew --no-daemon -q properties | sed -n 's/^version: //p')"
+          git pull --rebase origin main
+          sed -Ei 's|(cc\.modlabs:box3d4j:)[[:alnum:]._-]+|\1'"${version}"'|g; s|(<version>)[^<]+(</version>)|\1'"${version}"'\2|' README.md
+          git diff --quiet -- README.md && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Update README dependency to ${version}"
+          git push origin HEAD:main
