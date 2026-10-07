@@ -70,7 +70,7 @@ repositories {
 }
 
 dependencies {
-    implementation("cc.modlabs:box3d4j:git-e77352c-1.0.2")
+    implementation("cc.modlabs:box3d4j:git-003a3f7-1.0.2")
 }
 ```
 
@@ -82,7 +82,7 @@ repositories {
 }
 
 dependencies {
-    implementation "cc.modlabs:box3d4j:git-e77352c-1.0.2"
+    implementation "cc.modlabs:box3d4j:git-003a3f7-1.0.2"
 }
 ```
 
@@ -100,7 +100,7 @@ dependencies {
     <dependency>
         <groupId>cc.modlabs</groupId>
         <artifactId>box3d4j</artifactId>
-        <version>git-e77352c-1.0.2</version>
+        <version>git-003a3f7-1.0.2</version>
     </dependency>
 </dependencies>
 ```
