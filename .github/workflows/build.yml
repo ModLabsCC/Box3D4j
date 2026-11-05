@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sha="$(git ls-remote https://github.com/erincatto/box3d.git refs/heads/main | cut -f1)"
+          sha="336263320469e5e9febfe18697ab562488f7e97a"
           project_version="$(sed -n 's/^box3d4jVersion=//p' gradle.properties)"
           marker="box3d-main-${project_version}-${sha}"
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${marker}" >/dev/null 2>&1; then

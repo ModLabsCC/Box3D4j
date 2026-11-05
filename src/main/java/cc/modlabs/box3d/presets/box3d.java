@@ -10,7 +10,7 @@ import org.bytedeco.javacpp.tools.InfoMapper;
         target = "cc.modlabs.box3d",
         global = "cc.modlabs.box3d.global.Box3D",
         value = {
-            @Platform(define = "NDEBUG", include = {
+            @Platform(define = {"NDEBUG", "BOX3D_DOUBLE_PRECISION"}, include = {
                     "<box3d/base.h>",
                     "<box3d/math_functions.h>",
                     "<box3d/constants.h>",
@@ -24,6 +24,7 @@ import org.bytedeco.javacpp.tools.InfoMapper;
 public class box3d implements InfoMapper {
     @Override
     public void map(InfoMap infoMap) {
+        infoMap.put(new Info("BOX3D_DOUBLE_PRECISION").define());
         infoMap.put(new Info("B3_API").cppText("#define B3_API"));
         infoMap.put(new Info("B3_INLINE").cppText("#define B3_INLINE"));
         infoMap.put(new Info("b3InternalAssert", "b3World_DumpShapeBounds").skip());
