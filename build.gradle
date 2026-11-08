@@ -4,8 +4,9 @@ plugins {
 }
 
 group = 'cc.modlabs'
+def doublePrecision = providers.gradleProperty('doublePrecision').map { it.toBoolean() }.getOrElse(false)
 def box3dRevision = System.getenv('BOX3D_COMMIT')?.trim()?.take(7) ?: 'main'
-version = System.getenv('VERSION_OVERRIDE')?.trim() ?: "git-${box3dRevision}-${providers.gradleProperty('box3d4jVersion').get()}"
+version = (System.getenv('VERSION_OVERRIDE')?.trim() ?: "git-${box3dRevision}-${providers.gradleProperty('box3d4jVersion').get()}") + (doublePrecision ? '-double' : '')
 
 repositories {
     mavenCentral()
@@ -33,23 +34,43 @@ dependencies {
     runtimeOnly "org.bytedeco:javacpp:1.5.13:${targetPlatform}"
 }
 
+def generatedPreset = layout.buildDirectory.dir('generated/sources/preset')
 def generatedJava = layout.buildDirectory.dir('generated/sources/javacpp')
 def presetClasses = layout.buildDirectory.dir('preset-classes')
 def nativeResources = layout.buildDirectory.dir('generated/resources/native')
 
-sourceSets.main.java.srcDir generatedJava
+sourceSets.main.java.srcDirs generatedJava, generatedPreset
 sourceSets.main.resources.srcDir nativeResources
 
 tasks.register('buildBox3D', Exec) {
     environment 'BOX3D_TARGET_PLATFORM', targetPlatform
+    environment 'BOX3D_DOUBLE_PRECISION', doublePrecision ? 'ON' : 'OFF'
+    inputs.property 'doublePrecision', doublePrecision
     commandLine bashExecutable, 'scripts/build-box3d.sh'
     inputs.file 'src/main/c/box3d4j.h'
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/include")
     outputs.dir layout.buildDirectory.dir("${targetPlatform}/lib")
 }
 
+tasks.register('generatePreset') {
+    inputs.file 'src/preset/box3d.java'
+    inputs.property 'doublePrecision', doublePrecision
+    outputs.dir generatedPreset
+    doLast {
+        def preset = generatedPreset.get().file('cc/modlabs/box3d/presets/box3d.java').asFile
+        preset.parentFile.mkdirs()
+        def source = file('src/preset/box3d.java').text
+        if (doublePrecision) {
+            source = source.replace('@Platform(define = "NDEBUG"', '@Platform(define = {"NDEBUG", "BOX3D_DOUBLE_PRECISION"}')
+                    .replace('        infoMap.put(new Info("B3_API")', '        infoMap.put(new Info("BOX3D_DOUBLE_PRECISION").define());\n        infoMap.put(new Info("B3_API")')
+        }
+        preset.text = source
+    }
+}
+
 tasks.register('compilePresetJava', JavaCompile) {
-    source = fileTree('src/main/java') { include 'cc/modlabs/box3d/presets/**' }
+    dependsOn 'generatePreset'
+    source = generatedPreset
     classpath = configurations.compileClasspath
     destinationDirectory = presetClasses
     options.release = 8
@@ -77,7 +98,7 @@ tasks.register('generateBindings', JavaExec) {
     outputs.upToDateWhen { false }
 }
 
-compileJava.dependsOn 'generateBindings'
+compileJava.dependsOn 'generateBindings', 'generatePreset'
 
 tasks.register('compileNativeBindings', JavaExec) {
     dependsOn compileJava
@@ -93,8 +114,7 @@ tasks.register('compileNativeBindings', JavaExec) {
     }
     doLast {
         copy {
-            from nativeResources.get().asFile
-            include 'libjniBox3D.so', 'jniBox3D.dll', 'libjniBox3D.dylib'
+            from(['libjniBox3D.so', 'jniBox3D.dll', 'libjniBox3D.dylib'].collect { nativeResources.get().file(it) })
             into nativeResources.get().dir("cc/modlabs/box3d/${targetPlatform}")
         }
     }
@@ -139,6 +159,8 @@ java {
 compileJava {
     options.release = 8
 }
+
+if (!doublePrecision) sourceSets.test.java.exclude '**/LargeWorldPrecisionTest.java'
 
 compileTestJava {
     options.release = 17
@@ -193,6 +215,7 @@ publishing {
 
 test {
     useJUnitPlatform()
+    systemProperty 'box3d.doublePrecision', doublePrecision
 }
 
 javadoc {

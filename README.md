@@ -192,6 +192,8 @@ dependencies {
 </dependencies>
 ```
 
+For double-precision world positions, append `-double` to the version. Use only one precision variant on the classpath.
+
 ## Versioning
 
 Builds from Box3D `main` use the upstream Box3D commit in the version:
@@ -235,6 +237,8 @@ Build with:
 
 ```shell
 ./gradlew clean test jar
+# For double precision:
+./gradlew clean test jar -PdoublePrecision=true
 ```
 
 The build:

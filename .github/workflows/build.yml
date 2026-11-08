@@ -35,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sha="336263320469e5e9febfe18697ab562488f7e97a"
+          sha="$(git ls-remote https://github.com/erincatto/box3d.git refs/heads/main | cut -f1)"
           project_version="$(sed -n 's/^box3d4jVersion=//p' gradle.properties)"
           marker="box3d-main-${project_version}-${sha}"
           if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${marker}" >/dev/null 2>&1; then
@@ -53,7 +53,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        precision: [single, double]
+        target:
           - os: ubuntu-24.04
             platform: linux-x86_64
             bash: bash
@@ -67,15 +68,15 @@ jobs:
           - os: windows-2022
             platform: windows-x86_64
             bash: C:/Program Files/Git/bin/bash.exe
-    runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
+    runs-on: ${{ matrix.target.os }}
+    container: ${{ matrix.target.container }}
     env:
       VERSION_OVERRIDE: ${{ github.event.inputs.version || '' }}
       BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
-      BASH_EXECUTABLE: ${{ matrix.bash }}
+      BASH_EXECUTABLE: ${{ matrix.target.bash }}
     steps:
       - name: Install Linux build tools
-        if: matrix.platform == 'linux-x86_64'
+        if: matrix.target.platform == 'linux-x86_64'
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential ca-certificates curl git
@@ -99,16 +100,20 @@ jobs:
         run: echo "VERSION_OVERRIDE=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Build and test native binding
         shell: bash
-        run: ./gradlew clean test jar -PjavacppPlatform=${{ matrix.platform }}
+        run: ./gradlew clean test jar -PjavacppPlatform=${{ matrix.target.platform }} -PdoublePrecision=${{ matrix.precision == 'double' }}
       - uses: actions/upload-artifact@v7
         with:
-          name: box3d4j-${{ matrix.platform }}
+          name: box3d4j-${{ matrix.precision }}-${{ matrix.target.platform }}
           path: build/libs/Box3D4j-*.jar
           if-no-files-found: error
 
   bundle:
     needs: [upstream, native]
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        precision: [single, double]
     permissions:
       contents: write
     env:
@@ -128,6 +133,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
+          pattern: box3d4j-${{ matrix.precision }}-*
       - name: Merge platform JARs
         shell: bash
         run: |
@@ -147,7 +153,7 @@ jobs:
           grep -Fx 'cc/modlabs/box3d/windows-x86_64/jniBox3D.dll' entries.txt
       - uses: actions/upload-artifact@v7
         with:
-          name: box3d4j-all
+          name: box3d4j-${{ matrix.precision }}-all
           path: box3d4j-all.jar
       - name: Resolve version from tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -164,6 +170,21 @@ jobs:
         run: >-
           ./gradlew --no-daemon publish
           -PpublicationJar="$PWD/box3d4j-all.jar"
+          -PdoublePrecision=${{ matrix.precision == 'double' }}
+  mark-published:
+    needs: [upstream, bundle]
+    if: (github.ref == 'refs/heads/main' || github.event_name == 'schedule') && needs.upstream.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      BOX3D_COMMIT: ${{ needs.upstream.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
       - name: Mark Box3D commit as published
         if: (github.ref == 'refs/heads/main' || github.event_name == 'schedule') && needs.upstream.outputs.changed == 'true'
         env:
